@@ -342,6 +342,11 @@ begin
     exact tendsto_add lim1 lim2  }
 end
 
+lemma continuous_smul [topological_space γ] {f : γ → α} { g : γ → E} (_ :continuous f) (_ :continuous g) :
+  continuous (λx, f x • g x) := 
+continuous_iff_tendsto.mpr $
+assume x, tendsto_smul (continuous_iff_tendsto.mp ‹continuous f› x) (continuous_iff_tendsto.mp ‹continuous g› x)
+
 instance : normed_space α (E × F) :=
 { norm_smul :=
   begin
