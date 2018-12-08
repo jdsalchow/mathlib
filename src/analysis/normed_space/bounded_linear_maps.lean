@@ -62,6 +62,11 @@ begin
   exact smul (-1) hf
 end
 
+lemma neg' {f : E → F} (hf : is_bounded_linear_map f) : is_bounded_linear_map (-f) :=
+have h : (-f = (λ e, -f e)), by apply funext; simp,
+suffices is_bounded_linear_map (λ e, -f e), by rw[h]; assumption,
+neg ‹is_bounded_linear_map f›
+
 lemma add {f : E → F} {g : E → F} :
   is_bounded_linear_map f → is_bounded_linear_map g → is_bounded_linear_map (λ e, f e + g e)
 | ⟨hlf, Mf, hMf, hf⟩  ⟨hlg, Mg, hMg, hg⟩ := (hlf.mk' _ + hlg.mk' _).is_linear.with_bound (Mf + Mg) $ assume x,
