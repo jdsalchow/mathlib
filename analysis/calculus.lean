@@ -76,8 +76,8 @@ by ext v; exact
         have t⁻¹ * t = 1, from inv_mul_cancel $ ne_of_gt ‹t > 0›,
         have t⁻¹ * ∥t∥ = 1, by rwa[show ∥t∥ = abs t, from rfl, abs_of_pos ‹t > 0›],
         calc (0:F) = (1/t) • (t • (L₁ v - L₂ v) + ∥t∥ • ∥v∥ • (ψ₁ h - ψ₂ h)) : by rw [←H₁, smul_zero]
-               ... = (L₁ v - L₂ v) + ∥v∥ • (ψ₁ h - ψ₂ h) :  by simp; rw [smul_add, show h = t • v, from rfl, ←mul_smul, ‹t⁻¹ * ∥t∥ = 1›, one_smul];
-                                                               simp; rw[←mul_smul, ‹t⁻¹ * t = 1›, one_smul]; simp,
+               ... = (L₁ v - L₂ v) + ∥v∥ • (ψ₁ h - ψ₂ h) :  by simp; rw [smul_add, show h = t • v, from rfl, ←mul_smul, ‹t⁻¹ * t = 1›, one_smul];
+                                                               simp; rw[←mul_smul, ‹t⁻¹ * ∥t∥ = 1›, one_smul]; simp,
 
     -- now let t go to zero to in H₁ and conclude 0 = L₁ v - L₂ v
     -- first show that the equation depends continuously on t
@@ -179,11 +179,11 @@ show differentiable_at ‹x ∈ U› $ _, from
 def differentiable_maps (U : topological_space.opens E) (F : Type*) [normed_group F] [banach_space ℝ F] : set (U → F) :=
   differentiable
 
-instance (U : topological_space.opens E): is_subspace (differentiable_maps U F) := {
+instance (U : topological_space.opens E) : is_subspace (differentiable_maps U F) := {
   smul_mem := assume c f, differentiable_smul,
   add_mem := assume f g, differentiable_add,
   zero_mem := differentiable_const 0,
-  neg_mem := assume f _, 
+  neg_mem := assume (f : U → F) _, 
                have -f = (-1 : ℝ) • f, by apply funext; simp,
                begin rw[this], exact differentiable_smul ‹differentiable f› end
 }
