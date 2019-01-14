@@ -12,8 +12,12 @@ universes u v -- w
 
 variables {E : Type u} [banach_space ℝ E]
 variables {F : Type v} [banach_space ℝ F]
+variables {G : Type v} [banach_space ℝ G]
 
-variable {U : topological_space.opens E} 
+/- Define differentiability for maps f : U → F, where U is an open subset of a Banach space.
+ - We will later deal with `corestrictions` of such maps.
+ -/
+variables {U : topological_space.opens E} {V : topological_space.opens F} {W : topological_space.opens G}
 variable {x : E}
 
 def is_differential_at (_ : x ∈ U) (L : L(E,F)) (f : U → F) : Prop := 
@@ -89,7 +93,7 @@ by ext v; exact
     
     -- plug in the sequence 1/n for t
     let seq : ℕ → ℝ := λ n, 1 / (↑n + 1) in
-    have sequence.converges_to seq 0, from sequence.converges_to_iff_tendsto.mpr tendsto_div,
+    have sequence.converges_to seq 0, from sequence.converges_to_iff_tendsto.mpr sequentially_complete.tendsto_div,
 
     have 0 = ϕ 0, from
       have sequence.converges_to (ϕ∘seq) 0, from
@@ -97,7 +101,7 @@ by ext v; exact
         show ∀ V : set F, (0:F) ∈ V → is_open V → ∃ n0 : ℕ, ∀ n ≥ n0, ((ϕ∘seq) n) ∈ V, from 
           assume V (_ : (0:F) ∈ V) (_ : is_open V),          
           -- seq n is eventually 'small enough', thus H₁ applies and the sequence is eventually constantly zero
-          have ∃ n0 : ℕ, ∀ n ≥ n0, dist (seq n) 0 < r, from (sequence.metrically_converges_to_iff_tendsto.mpr tendsto_div) r ‹r > 0›,       
+          have ∃ n0 : ℕ, ∀ n ≥ n0, dist (seq n) 0 < r, from (sequence.metrically_converges_to_iff_tendsto.mpr sequentially_complete.tendsto_div) r ‹r > 0›,       
           suffices ∀ (n0 : ℕ), (∀ (n : ℕ), n ≥ n0 → dist (seq n) 0 < r) → ∀ (n : ℕ), n ≥ n0 → (ϕ ∘ seq) n ∈ V, from 
             exists_imp_exists this ‹_›,
           assume n0 H n (_ : n ≥ n0),
@@ -116,7 +120,11 @@ by ext v; exact
           ... = L₁ v - (L₁ v - L₂ v + ∥v∥ • 0)             : by rw[‹ψ₁ 0 = 0›, ‹ψ₂ 0 = 0›, sub_zero]
           ... = L₂ v                                       : by simp; abel
 
-def differentiable_at (_ : x ∈ U) (f : U → F) := ∃ L : L(E, F), is_differential_at ‹x ∈ U› L f
+
+/- Differentiability for maps that are not co-unrestricted, i.e. with codomain F. -/
+namespace co_unrestricted
+
+def differentiable_at (_ : x ∈ U) (f : U → F) : Prop := ∃ A : L(E, F), is_differential_at ‹x ∈ U› A f
 
 noncomputable def differential_at (_ : x ∈ U) {f : U → F} (D : differentiable_at ‹x ∈ U› f) : L(E, F):=
 classical.some D
@@ -195,3 +203,54 @@ def continuously_differentiable_maps (U : topological_space.opens E) (F : Type*)
 assume f, continuous (D f)
 
 notation `C¹(` U `,` F `)` := continuously_differentiable_maps U F
+
+end co_unrestricted
+
+def differentiable_at (_ : x ∈ U) (f : U → V) : Prop := co_unrestricted.differentiable_at ‹x ∈ U› (λ x, (f x).val)
+
+noncomputable def differential_at (_ : x ∈ U) {f : U → V} (D : differentiable_at ‹x ∈ U› f) : L(E, F):=
+classical.some D
+
+def differentiable (f : U → V) : Prop := ∀ x ∈ U, differentiable_at ‹x ∈ U› f
+
+noncomputable def differential {f : U → V} (h : differentiable f) : U → L(E,F) :=
+λ x, differential_at x.property (h x x.property)
+
+
+theorem chain_rule (f : U → V) (g : V → W) {_ : x ∈ U} :
+  differentiable_at ‹x ∈ U› f → differentiable_at (f ⟨x, ‹_›⟩).property g → differentiable_at ‹x ∈ U› (g ∘ f) :=
+
+assume h_diff_f h_diff_g,
+
+let ⟨Dfx, (_ : is_differential_at ‹x ∈ U› Dfx _)⟩ := h_diff_f,
+    ⟨Dgfx, (_ : is_differential_at (f ⟨x, _⟩).property Dgfx _)⟩ := h_diff_g in
+
+let ⟨ψ₁, _, _, H₁⟩ := ‹is_differential_at ‹x ∈ U› Dfx _›,
+    ⟨ψ₂, _, _, H₂⟩ := ‹is_differential_at (f ⟨x, _⟩).property Dgfx _› in
+
+have H : is_bounded_linear_map $ Dgfx ∘ Dfx, from is_bounded_linear_map.comp Dgfx.property Dfx.property,
+
+suffices is_differential_at ‹x ∈ U›
+  ⟨Dgfx ∘ Dfx, ‹_›⟩ (λ x, g (f x)), from ⟨_, this⟩,
+
+suffices ∃ (ψ : E → G) (_ : continuous ψ) (_ : ψ 0 = 0), ∀ (h : E), x + h ∈ U → 
+  (g (f ⟨x + h, ‹_›⟩)).val = (g (f ⟨x, ‹_›⟩)).val + Dgfx (Dfx h) + ∥h∥ • ψ h, by assumption,
+
+have _, from
+  assume h : E,
+  assume : x + h ∈ U,
+  let fval := λ (x : U), (f x).val,
+      fprop := λ x, (f x).property,
+      ψ := λ x:E, (0:G) in
+  have fval ⟨x + h, _⟩ = fval ⟨x, _⟩ + Dfx h + ∥h∥ • ψ₁ h, from H₁ h ‹x + h ∈ U›,
+
+  calc (g (f ⟨x + h, ‹_›⟩)).val
+         = (g (⟨fval ⟨x + h, ‹_›⟩,  fprop ⟨x + h, ‹_›⟩⟩)).val : by simp only [eq_self_iff_true, subtype.eta]
+     ... = (g (⟨fval ⟨x, ‹_›⟩ + Dfx h + ∥h∥ • ψ₁ h, sorry⟩)) : sorry -- by rw[H₁ h ‹_›]
+     ... = 
+     ... = (g (f ⟨x, ‹_›⟩)).val + Dgfx (Dfx h) + ∥h∥ • ψ h : sorry,
+
+
+begin
+sorry
+end

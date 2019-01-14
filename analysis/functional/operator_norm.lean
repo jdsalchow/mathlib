@@ -332,7 +332,7 @@ structure normed_space.core (k : Type*) (E : Type*)
 (homogeneous : ∀ c : k, ∀ x : E, ∥c • x∥ = ∥c∥ * ∥x∥)
 (triangle : ∀ x y : E, ∥x + y∥ ≤ ∥x∥ + ∥y∥)
 
-def normed_space.of_core (k : Type*) (E : Type*)
+noncomputable def normed_space.of_core (k : Type*) (E : Type*)
   [normed_field k] [add_comm_group E] [vector_space k E] [has_norm E] (C : normed_space.core k E) : normed_space k E :=
 begin
   exact {
