@@ -5,7 +5,7 @@ Authors: Rohan Mitta, Kevin Buzzard, Alistair Tucker, Johannes Hölzl
 
 Lipschitz functions and the Banach fixed-point theorem
 -/
-import topology.metric_space.basic analysis.specific_limits
+import topology.metric_space.basic  analysis.specific_limits .cau_seq_filter
 open filter
 
 variables {α : Type*} {β : Type*} {γ : Type*}
@@ -141,6 +141,33 @@ have tendsto (λ (n : ℕ × ℕ), dist (f^[n.fst] x₀) (f^[n.snd] x₀)) at_to
 have cauchy_seq (λ n, f^[n] x₀), by rwa [cauchy_seq_iff_tendsto_dist_at_top_0],
 let ⟨x, hx⟩ := cauchy_seq_tendsto_of_complete this in
 ⟨x, fixed_point_of_tendsto_iterate (hf.to_uniform_continuous.continuous.tendsto x) ⟨x₀, hx⟩⟩
+
+
+/-- A lipschitz function defined withing the set s with Lipschitz constant K. -/
+def lipschitz_within_with (s : set α) (K : ℝ) (f : α → β) :=
+0 ≤ K ∧ ∀ x y, x ∈ s → y ∈ s → dist (f x) (f y) ≤ K * dist x y
+
+/-- If a function is Lipschitz within a subset s₁, and takes values in s₂, then it induces a Lipschitz map s₁ → s₂ -/
+lemma restriction_is_lipschitz {s₁ : set α} {s₂ : set β} {K : ℝ} {f : α → β} (corestricts: ∀ x : s₁, (f x) ∈ s₂) (h : lipschitz_within_with s₁ K f) : 
+  lipschitz_with K ((λ x, ⟨f ↑x, corestricts x⟩) : s₁ → s₂) :=
+⟨h.1, assume x y, h.2 x y x.property y.property⟩
+
+lemma fixed_point_unique_of_contraction_within {s : set α} {K : ℝ} {f : α → α} (corestricts: ∀ x : s, (f x) ∈ s)
+(hK : K < 1) (hl : lipschitz_within_with s K f) : ∀ x y, x ∈ s → y ∈ s → f x = x → f y = y → x = y :=
+assume x y _ _ _ _,
+let f' := (λ x : s, ⟨f x, corestricts x⟩ : s → s) in
+have (⟨x, ‹_›⟩ : s) = ⟨y, ‹_›⟩,
+  from lipschitz_with.fixed_point_unique_of_contraction hK (restriction_is_lipschitz corestricts hl) (by simpa) (by simpa),
+by simpa
+
+lemma exists_fixed_point_of_contraction_within {s : set α} {K : ℝ} {f : α → α} (corestricts : ∀ x : s, (f x) ∈ s)
+(hK : K < 1) (hl : lipschitz_within_with s K f) (hc : is_closed s) (hs : nonempty s) [complete_space α]: ∃ x : s, f x = x := 
+let f' := (λ x : s, ⟨f x, corestricts x⟩ : s → s) in
+suffices ∃ x, f' x = x, by simpa,
+begin 
+  haveI : complete_space s := complete_of_closed _ hc,
+  apply lipschitz_with.exists_fixed_point_of_contraction hK (restriction_is_lipschitz corestricts hl),
+end
 
 end contraction
 

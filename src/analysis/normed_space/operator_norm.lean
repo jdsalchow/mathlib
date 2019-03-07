@@ -71,8 +71,24 @@ open lattice set
 
 local notation `L(` E `,` F `)` := @bounded_linear_maps _ E F _ _ _
 
-noncomputable def to_linear_map (A : L(E, F)) : linear_map _ E F :=
+@[simp] noncomputable def to_linear_map (A : L(E, F)) : linear_map _ E F :=
 {to_fun := A.val, ..A.property}
+
+@[simp] lemma bounded_linear_map.map_add (x y : E) {A : L(E,F)} : A (x + y) = A x + A y :=
+by rw (show (A : E → F) = (to_linear_map A : E → F), from rfl); apply linear_map.map_add
+
+@[simp] lemma bounded_linear_map.map_smul (c : ℝ) (x  : E) {A : L(E,F)} : A (c • x) = c • A x :=
+by rw (show (A : E → F) = (to_linear_map A : E → F), from rfl); apply linear_map.map_smul
+
+@[simp] lemma bounded_linear_map.map_zero {A : L(E,F)}: A 0 = 0 :=
+by rw (show (A : E → F) = (to_linear_map A : E → F), from rfl); apply linear_map.map_zero
+
+@[simp] lemma bounded_linear_map.map_neg (x : E) {A : L(E,F)}: A (- x) = - A x :=
+by rw (show (A : E → F) = (to_linear_map A : E → F), from rfl); apply linear_map.map_neg
+
+@[simp] lemma bounded_linear_map.map_sub (x y : E) {A : L(E,F)} : A (x - y) = A x - A y :=
+by rw (show (A : E → F) = (to_linear_map A : E → F), from rfl); apply linear_map.map_sub
+
 
 /-- The operator norm of a bounded linear map A : E → F is the sup of
     the set ∥A x∥ with ∥x∥ ≤ 1. If E = {0} we set ∥A∥ = 0. -/

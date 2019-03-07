@@ -6,7 +6,7 @@ Characterize completeness of metric spaces in terms of Cauchy sequences.
 In particular, reconcile the filter notion of Cauchy-ness with the cau_seq notion on normed spaces.
 -/
 
-import topology.uniform_space.basic analysis.normed_space.basic data.real.cau_seq analysis.specific_limits
+import topology.uniform_space.basic topology.sequences analysis.normed_space.basic data.real.cau_seq analysis.specific_limits
 import tactic.linarith
 
 universes u v
@@ -251,6 +251,29 @@ begin
     exact Z,
     exact hB N }
 end
+
+instance complete_of_closed {α : Type*} [metric_space α] [complete_space α] (s : set α) (_ : is_closed s) : complete_space s :=
+suffices ∀ (x : ℕ → s), cauchy_seq x → (∃ (x₀ : s), tendsto x at_top (nhds x₀)), from 
+  complete_of_cauchy_seq_tendsto this, 
+assume x h_cauchy_x,
+have cauchy_seq (λ n : ℕ , (x n : α)),
+begin
+  rw metric.cauchy_seq_iff at *,
+  intros ε εpos,
+  apply exists_imp_exists _ (h_cauchy_x ε εpos),
+  intros N H m n _ _,
+  exact H m n ‹_› ‹_›
+end,
+let ⟨x₀, h_tendsto⟩ := cauchy_seq_tendsto_of_complete this in
+  have x₀ ∈ s, from mem_of_is_closed_sequential ‹_› (assume n, (x n).property) ‹_›,
+  ⟨⟨x₀, ‹x₀ ∈ s›⟩, metric.tendsto_at_top.mpr
+    begin
+      rw metric.tendsto_at_top at h_tendsto,
+      intros ε εpos,
+      apply exists_imp_exists _ (h_tendsto ε εpos),
+      intros N H n ngeN,
+      exact H n ngeN
+    end⟩
 
 section
 
